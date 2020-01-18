@@ -39,9 +39,10 @@ def connection_dialog():
                             'type':         'number',
                             'key':          'interval',
                             'title':        'Cycle Interval In Milliseconds',
-                            'value':        1000,
+                            'value':        '0',
                         },
                     ],
+                    'Zero value means no loop delay.',
                 ],
                 [
                     # Third Section
@@ -51,19 +52,19 @@ def connection_dialog():
                             'type':          'number',
                             'key':           'max_retries',
                             'title':         'Maximum Number of Retries',
-                            'value':         10,
+                            'value':         '10',
                         },
                         {
                             'type':          'number',
                             'key':           'retry_delay',
                             'title':         'Retry Delay in Seconds',
-                            'value':         60,
+                            'value':         '60',
                         },
                         {
                             'type':           'number',
                             'key':            'reset_retry_counter_duration',
                             'title':          'Reset Retry Counter Duration in Seconds',
-                            'value':          3600,
+                            'value':          '3600',
                         },
                     ],
                 ],
@@ -99,11 +100,11 @@ class BasicAuthRequest():
         try:
             r = requests.post(base_url + path, auth=self.auth, data=data)
         except Exception as e:
-            print("requests.post() exception: %s" % (str(e), ))
+            print("\n\nrequests.post() exception: %s" % (str(e), ))
             self.transmit_failure()
         else:
             if r.status_code != 201:
-                print("requests.post() status_code = %d" % (r.status_code, ))
+                print("\n\nrequests.post() status_code = %d" % (r.status_code, ))
                 self.transmit_failure()
             self.last_successful_try = datetime.datetime.now()
 
@@ -141,14 +142,25 @@ try:
 
     while True:
         x, y, z = motion.get_gravity()
-        r.post('ios_sensor_pack/gravity/', {'x': x, 'y': y, 'z': z})
+        gravity_data = {'x': x, 'y': y, 'z': z}
+
         x, y, z = motion.get_user_acceleration()
-        r.post('ios_sensor_pack/user_acceleration/', {'x': x, 'y': y, 'z': z})
+        acceleration_data = {'x': x, 'y': y, 'z': z}
+
         roll, pitch, yaw = motion.get_attitude()
-        r.post('ios_sensor_pack/attitude/', {'roll': roll, 'pitch': pitch, 'yaw': yaw})
+        attitude_data = {'roll': roll, 'pitch': pitch, 'yaw': yaw}
+
         x, y, z, accuracy = motion.get_magnetic_field()
-        r.post('ios_sensor_pack/magnetic_field/', {'x': x, 'y': y, 'z': z, 'accuracy': accuracy})
-        r.post(base_url + 'ios_sensor_pack/location/', location.get_location())
+        magnetic_data = {'x': x, 'y': y, 'z': z, 'accuracy': accuracy}
+
+        location_data = location.get_location()
+
+        r.post('ios_sensor_pack/gravity/', gravity_data)
+        r.post('ios_sensor_pack/user_acceleration/', acceleration_data)
+        r.post('ios_sensor_pack/attitude/', attitude_data)
+        r.post('ios_sensor_pack/magnetic_field/', magnetic_data)
+        r.post(base_url + 'ios_sensor_pack/location/', location_data)
+
         if r.retry_delay != 0:
             time.sleep(float(r.retry_delay)/1000.0)
 
@@ -156,7 +168,8 @@ try:
 except Exception as e:
     location.stop_updates()
     motion.stop_updates()
-    print("Exception: %s" % (str(e), ))
+    print("\n\nException: %s" % (str(e), ))
+    dialogs.alert('Too many failures to continue...')
     exit(1)
 
 exit(0)
