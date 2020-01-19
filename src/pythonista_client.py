@@ -6,6 +6,13 @@ from requests.auth import HTTPBasicAuth
 import location, motion, dialogs
 
 
+def gps_to_utc(gps_timestamp):
+    # https://stackoverflow.com/questions/33415475/how-to-get-current-date-and-time-from-gps-unsegment-time-in-python
+    # utc = 1980-01-06UTC + (gps - (leap_count(2017) - leap_count(1980)))
+    # leap_count table: http://hpiers.obspm.fr/eop-pc/index.php?index=TAI-UTC_tab&lang=en
+    return datetime.datetime(1980, 1, 6) + datetime.timedelta(seconds=gps_timestamp - (37 - 19))
+
+
 def connection_dialog():
     config = dialogs.form_dialog(
             title='Python Automotive Telemetry Lab',
@@ -154,12 +161,13 @@ try:
         magnetic_data = {'x': x, 'y': y, 'z': z, 'accuracy': accuracy}
 
         location_data = location.get_location()
+        location_data['sat_timestamp'] = gps_to_utc(location_data['timestamp'])
 
         r.post('ios_sensor_pack/gravity/', gravity_data)
         r.post('ios_sensor_pack/user_acceleration/', acceleration_data)
         r.post('ios_sensor_pack/attitude/', attitude_data)
         r.post('ios_sensor_pack/magnetic_field/', magnetic_data)
-        r.post(base_url + 'ios_sensor_pack/location/', location_data)
+        r.post('ios_sensor_pack/location/', location_data)
 
         if r.retry_delay != 0:
             time.sleep(float(r.retry_delay)/1000.0)
