@@ -4,4 +4,4 @@
 
 Python REST client sends location and motion data to Django REST interface location in a different repository.  The Pythonista Python 3.8 implementation supports IOS specific Python modules ```location```, ```motion``` and ```dialogs```.
 
-A companion repository (not yet created) contains the server code providing the REST interface used by this client code.
+A companion repository ([https://github.com/thatlarrypearson/telemetry-django-server](Telemetry Django Server)) contains the server code providing the REST interface used by this client code.

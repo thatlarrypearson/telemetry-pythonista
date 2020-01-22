@@ -6,13 +6,6 @@ from requests.auth import HTTPBasicAuth
 import location, motion, dialogs
 
 
-def gps_to_utc(gps_timestamp):
-    # https://stackoverflow.com/questions/33415475/how-to-get-current-date-and-time-from-gps-unsegment-time-in-python
-    # utc = 1980-01-06UTC + (gps - (leap_count(2017) - leap_count(1980)))
-    # leap_count table: http://hpiers.obspm.fr/eop-pc/index.php?index=TAI-UTC_tab&lang=en
-    return datetime.datetime(1980, 1, 6) + datetime.timedelta(seconds=gps_timestamp - (37 - 19))
-
-
 def connection_dialog():
     config = dialogs.form_dialog(
             title='Python Automotive Telemetry Lab',
@@ -24,17 +17,19 @@ def connection_dialog():
                             'type':         'url',
                             'key':          'base_url',
                             'title':        'Base URL',
-                            'value':        'http://192.168.2.10:8000/',
+                            'value':        'http://192.168.1.51:8000/',
                         },
                         {
                             'type':        'text',
                             'key':         'username',
                             'title':       'username',
+                            'value':       'test1',
                         },
                         {
                             'type':        'text',
                             'key':         'password',
                             'title':       'password',
+                            'value':       'telemetry',
                         },
                     ],
                 ],
@@ -49,7 +44,7 @@ def connection_dialog():
                             'value':        '0',
                         },
                     ],
-                    'Zero value means no loop delay.',
+                    'Zero value means no loop delay.\n\n',
                 ],
                 [
                     # Third Section
@@ -59,18 +54,18 @@ def connection_dialog():
                             'type':          'number',
                             'key':           'max_retries',
                             'title':         'Maximum Number of Retries',
-                            'value':         '10',
+                            'value':         '2',
                         },
                         {
                             'type':          'number',
                             'key':           'retry_delay',
                             'title':         'Retry Delay in Seconds',
-                            'value':         '60',
+                            'value':         '3',
                         },
                         {
                             'type':           'number',
                             'key':            'reset_retry_counter_duration',
-                            'title':          'Reset Retry Counter Duration in Seconds',
+                            'title':          'Reset Retry in Seconds',
                             'value':          '3600',
                         },
                     ],
@@ -161,7 +156,6 @@ try:
         magnetic_data = {'x': x, 'y': y, 'z': z, 'accuracy': accuracy}
 
         location_data = location.get_location()
-        location_data['sat_timestamp'] = gps_to_utc(location_data['timestamp'])
 
         r.post('ios_sensor_pack/gravity/', gravity_data)
         r.post('ios_sensor_pack/user_acceleration/', acceleration_data)
@@ -177,7 +171,7 @@ except Exception as e:
     location.stop_updates()
     motion.stop_updates()
     print("\n\nException: %s" % (str(e), ))
-    dialogs.alert('Too many failures to continue...')
+    dialogs.alert('Too many failures to continue...\n\nBye!')
     exit(1)
 
 exit(0)
