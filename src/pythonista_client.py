@@ -1,15 +1,76 @@
 # Pythonista Client
 import datetime
 import time
+import json
 import requests
 from requests.auth import HTTPBasicAuth
 import location, motion, dialogs
 
 
-def connection_dialog():
+DEFAULT_CONFIG = {
+    'use_config_file':               False,
+    'save_config_file':              True,
+    'config_file_name':              'pythonista_client_config.json',
+    'base_url':                      'http://localhost:8000',
+    'username':                      'test1',
+    'password':                      'telemetry',
+    'interval':                      '0',
+    'max_retries':                   '3',
+    'retry_delay':                   '3',
+    'reset_retry_counter_duration':  '3600',
+}
+
+
+def get_config_or_defaults():
+    config = None
+    try:
+        with open(DEFAULT_CONFIG['config_file_name'], 'r') as fd:
+            config = json.load(fd)
+        return config
+    except:
+        pass
+
+    return dict(DEFAULT_CONFIG)
+
+
+def save_config(config):
+    with open(config['config_file_name'], 'w') as fd:
+        json.dump(config, fd)
+    
+    if DEFAULT_CONFIG['config_file_name'] != config['config_file_name']:
+        print("\n\nWARNING: only default config file (%s) gets loaded on startup.\n\n" % (
+            DEFAULT_CONFIG['config_file_name'],
+        ))
+
+
+def connection_dialog(config):
     config = dialogs.form_dialog(
             title='Python Automotive Telemetry Lab',
             sections=[
+                [
+                    # Config Section
+                    'Configuration Information',
+                    [
+                        {
+                            'type':        'switch',
+                            'key':         'use_config_file',
+                            'title':       'Use Config File',
+                            'value':       config['use_config_file'],
+                        },
+                        {
+                            'type':        'switch',
+                            'key':         'save_config_file',
+                            'title':       'Save Config File',
+                            'value':       config['save_config_file'],
+                        },
+                        {
+                            'type':        'text',
+                            'key':         'config_file_name',
+                            'title':       'Config File Name',
+                            'value':       config['config_file_name'],
+                        },
+                    ],
+                ],
                 [   # First Section
                     'Server Connection Info',
                     [
@@ -17,19 +78,19 @@ def connection_dialog():
                             'type':         'url',
                             'key':          'base_url',
                             'title':        'Base URL',
-                            'value':        'http://192.168.1.51:8000/',
+                            'value':        config['base_url'],
                         },
                         {
                             'type':        'text',
                             'key':         'username',
                             'title':       'username',
-                            'value':       'test1',
+                            'value':       config['username'],
                         },
                         {
                             'type':        'text',
                             'key':         'password',
                             'title':       'password',
-                            'value':       'telemetry',
+                            'value':       config['password'],
                         },
                     ],
                 ],
@@ -41,7 +102,7 @@ def connection_dialog():
                             'type':         'number',
                             'key':          'interval',
                             'title':        'Cycle Interval In Milliseconds',
-                            'value':        '0',
+                            'value':        config['interval'],
                         },
                     ],
                     'Zero value means no loop delay.\n\n',
@@ -54,19 +115,19 @@ def connection_dialog():
                             'type':          'number',
                             'key':           'max_retries',
                             'title':         'Maximum Number of Retries',
-                            'value':         '2',
+                            'value':         config['max_retries'],
                         },
                         {
                             'type':          'number',
                             'key':           'retry_delay',
                             'title':         'Retry Delay in Seconds',
-                            'value':         '3',
+                            'value':         config['retry_delay'],
                         },
                         {
                             'type':           'number',
                             'key':            'reset_retry_counter_duration',
                             'title':          'Reset Retry in Seconds',
-                            'value':          '3600',
+                            'value':          config['reset_retry_counter_duration'],
                         },
                     ],
                 ],
@@ -77,7 +138,7 @@ def connection_dialog():
         return None
 
     if config['base_url'][-1:] != '/':
-        config['base_url'] = base_url + '/'
+        config['base_url'] = config['base_url'] + '/'
 
     return config
 
@@ -100,7 +161,7 @@ class BasicAuthRequest():
 
     def post(self, path, data):
         try:
-            r = requests.post(base_url + path, auth=self.auth, data=data)
+            r = requests.post(self.base_url + path, auth=self.auth, data=data)
         except Exception as e:
             print("\n\nrequests.post() exception: %s" % (str(e), ))
             self.transmit_failure()
@@ -124,16 +185,22 @@ if not location.is_authorized():
     dialogs.alert('Authorize Location Services For Pythonista Application Before Continuing')
     raise Exception('Location Services Not Enabled')
 
-base_url = None
-username = None
+config = get_config_or_defaults()
 
-while base_url is None or username is None:
-    config = connection_dialog()
-    if config:
-        base_url = config['base_url']
-        username = config['username']
+if config['use_config_file']:
+    print("Starting from config file (%s)\n" % (config['config_file_name'], ))
+else:
+    config = connection_dialog(config)
 
-print(config)
+if not config:
+    print("\n\nNo configuration - exiting.\n\n")
+    exit(1)
+
+print("Configuration: %s\n" % (str(config), ))
+
+if config['save_config_file']:
+    save_config(config)
+    print("Config file (%s) saved.\n" % (config['config_file_name'], ))
 
 r = BasicAuthRequest(config)
 
