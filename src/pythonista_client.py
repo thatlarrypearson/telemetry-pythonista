@@ -248,8 +248,8 @@ try:
             'location_timestamp':           location_data['timestamp'],
             'location_horizontal_accuracy': location_data['horizontal_accuracy'],
             'location_vertical_accuracy':   location_data['vertical_accuracy'],
-            'location_speed':               location_data['location_speed'],
-            'location_course':              location_data['location_course'],
+            'location_speed':               location_data['speed'],
+            'location_course':              location_data['course'],
         }
 
         # r.post('ios_sensor_pack/gravity/', gravity_data)
