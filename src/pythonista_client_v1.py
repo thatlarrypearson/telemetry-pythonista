@@ -1,4 +1,4 @@
-# Pythonista Client Version 2
+# Pythonista Client Version 1
 import datetime
 import time
 import json
@@ -210,58 +210,30 @@ motion.start_updates()
 try:
 
     while True:
-        gravity_x, gravity_y, gravity_z = motion.get_gravity()
-        # gravity_data = {'x': gravity_x, 'y': gravity_y, 'z': gravity_z}
+        x, y, z = motion.get_gravity()
+        gravity_data = {'x': x, 'y': y, 'z': z}
 
-        acceleration_x, acceleration_y, acceleration_z = motion.get_user_acceleration()
-        # acceleration_data = {'x': acceleration_x, 'y': acceleration_y, 'z': acceleration_z}
+        x, y, z = motion.get_user_acceleration()
+        acceleration_data = {'x': x, 'y': y, 'z': z}
 
-        attitude_roll, attitude_pitch, attitude_yaw = motion.get_attitude()
-        # attitude_data = {'roll': attitude_roll, 'pitch': attitude_pitch, 'yaw': attitude_yaw}
+        roll, pitch, yaw = motion.get_attitude()
+        attitude_data = {'roll': roll, 'pitch': pitch, 'yaw': yaw}
 
-        magnetic_x, magnetic_y, magnetic_z, magnetic_accuracy = motion.get_magnetic_field()
-        # magnetic_data = {'x': magnetic_x, 'y': magnetic_y, 'z': magnetic_z, 'accuracy': magnetic_accuracy}
+        x, y, z, accuracy = motion.get_magnetic_field()
+        magnetic_data = {'x': x, 'y': y, 'z': z, 'accuracy': accuracy}
 
         location_data = location.get_location()
 
-        ios_sensor_data = {
-            'gravity_x':                    gravity_x,
-            'gravity_y':                    gravity_y,
-            'gravity_z':                    gravity_z,
-
-            'acceleration_x':               acceleration_x,
-            'acceleration_y':               acceleration_y,
-            'acceleration_z':               acceleration_z,
-
-            'attitude_roll':                attitude_roll,
-            'attitude_pitch':               attitude_pitch,
-            'attitude_yaw':                 attitude_yaw,
-
-            'magnetic_x':                   magnetic_x,
-            'magnetic_y':                   magnetic_y,
-            'magnetic_z':                   magnetic_z,
-            'magnetic_accuracy':            magnetic_accuracy,
-
-            'location_longitude':           location_data['longitude'],
-            'location_latitude':            location_data['latitude'],
-            'location_altitude':            location_data['altitude'],
-            'location_timestamp':           location_data['timestamp'],
-            'location_horizontal_accuracy': location_data['horizontal_accuracy'],
-            'location_vertical_accuracy':   location_data['vertical_accuracy'],
-            'location_speed':               location_data['speed'],
-            'location_course':              location_data['course'],
-        }
-
-        # r.post('ios_sensor_pack/gravity/', gravity_data)
-        # r.post('ios_sensor_pack/user_acceleration/', acceleration_data)
-        # r.post('ios_sensor_pack/attitude/', attitude_data)
-        # r.post('ios_sensor_pack/magnetic_field/', magnetic_data)
-        # r.post('ios_sensor_pack/location/', location_data)
-
-        r.post('ios_sensor_pack/ios_sensor/', ios_sensor_data)
+        r.post('ios_sensor_pack/gravity/', gravity_data)
+        r.post('ios_sensor_pack/user_acceleration/', acceleration_data)
+        r.post('ios_sensor_pack/attitude/', attitude_data)
+        r.post('ios_sensor_pack/magnetic_field/', magnetic_data)
+        r.post('ios_sensor_pack/location/', location_data)
 
         if r.retry_delay != 0:
             time.sleep(float(r.retry_delay)/1000.0)
+            
+        # print(datetime.now())
 
 
 except Exception as e:
